@@ -3,6 +3,11 @@ import os.path
 import sys
 import datetime
 import time
+import random
+import requests
+import pymysql
+import pandas as pd
+
 
 try:
     # MySQL 서버 연결 설정
@@ -18,46 +23,22 @@ try:
     cursor = connection.cursor()
 
 
-     # 테이블 생성 쿼리
-    create_table_query = """
-    CREATE TABLE IF NOT EXISTS history (
-        accountNumber VARCHAR(30) NOT NULL,
-        name VARCHAR(20) NOT NULL,
-        transactionType VARCHAR(20) NOT NULL,
-        amount BIGINT NOT NULL,
-        balance BIGINT NOT NULL
-    )
-    """
-
-    # 테이블 생성
-    cursor.execute(create_table_query)
-
-    
     class AccountCreate:
         def __init__(self, userAccount, userName, userBalance=0):
             self.userAccount = userAccount
             self.userName = userName
             self.userBalance = userBalance
+
             bankinform.append([userAccount,userName,userBalance]) # 계좌 이름 잔액 저장
-            # bankinform.append("{}:{}:{}".format(userAccount, userName, userBalance))
             allAccount.append(userAccount)
             
+
             # 최초 입금 기록 저장
             accountfile = userAccount + ".txt"
             with open(accountfile, 'a', encoding="UTF-8") as f:
                 time = datetime.datetime.now()
                 f.write("{} : {} 원 입금하였습니다".format(time, self.userBalance))
                 f.write("\n")
-
-            ####
-            # MySQL 테이블에 정보 저장
-            insert_query = """
-            INSERT INTO history (계좌번호, 이름, 입출금, 금액, 잔액) 
-            VALUES (%s, %s, %s, %s, %s)
-            """
-
-            cursor.execute(insert_query, (userAccount, userName, "입금", userBalance, userBalance))
-            connection.commit()
 
 
 
@@ -82,71 +63,108 @@ try:
         
         # 2번 입금 
         def addBalance():
-            inputaccount = input("계좌: ") # 계좌번호 입력
-            if inputaccount in allAccount: # 계좌번호가 존재하면 금액 입력
-                inputmoney = int(input("금액: ")) # 금액 입력
-                for account in bankinform: # 계좌번호 찾기 
-                    if inputaccount == account[0]: # 
-                        account[2] = int(account[2]) + inputmoney # 계좌번호 잔액에 금액 추가
-                                    
-                                    
-                # 입금 내역 기록
-                myaccount = inputaccount + ".txt"
-                with open(myaccount, 'a', encoding='UTF-8') as f:
-                    time = datetime.datetime.now()
-                    f.write("{} : {} 원 입금하였습니다".format(time, inputmoney))
-                    f.write("\n")
-                    
-            # 계좌번호 없을 경우
-            else:
-                print("없는 계좌번호 입니다")
+            print("* 입금처리를 진행할 계좌번호를 입력해주세요\n")
+            print("* 계속 진행하길 원하면 y , 첫 화면으로 가길 원하면 n 을 입력해주세요.")
+            a = input()
+            if a=="y":
+                inputaccount = input("계좌: ") # 계좌번호 입력
+                if inputaccount in allAccount: # 계좌번호가 존재하면 금액 입력
+                    inputmoney = int(input("금액: ")) # 금액 입력
+                    for account in bankinform: # 계좌번호 찾기 
+                        if inputaccount == account[0]: # 
+                            account[2] = int(account[2]) + inputmoney # 계좌번호 잔액에 금액 추가
+                                        
+                                        
+                    # 입금 내역 기록
+                    myaccount = inputaccount + ".txt"
+                    with open(myaccount, 'a', encoding='UTF-8') as f:
+                        time = datetime.datetime.now()
+                        f.write("{} : {} 원 입금하였습니다".format(time, inputmoney))
+                        f.write("\n")
+                        
+                # 계좌번호 없을 경우
+                else:
+                    print("없는 계좌번호 입니다")
+            else :
+                print("첫 화면으로 돌아갑니다")
 
 
         # 3번 출금
         def withdrawBalance():
-            inputaccount = input("계좌: ")
-            if inputaccount in allAccount:
-                inputmoney = int(input("금액: "))
-                for account in bankinform:
-                    if inputaccount == account[0]:
-                        if int(account[2]) >= inputmoney:
-                            account[2] = int(account[2]) - inputmoney
-                            myaccount = inputaccount + ".txt"
-                            with open(myaccount, 'a', encoding='UTF-8') as f:    
-                                time = datetime.datetime.now()
-                                f.write("{} : {} 원 출금하였습니다".format(time, inputmoney))
-                                f.write("\n")
+            print("* 출금처리를 진행할 계좌번호를 입력해주세요\n")
+            print("* 계속 진행하길 원하면 y , 첫 화면으로 가길 원하면 n 을 입력해주세요.")
+            a = input()
+            if a=="y":
+                inputaccount = input("계좌: ")
+                if inputaccount in allAccount:
+                    inputmoney = int(input("금액: "))
+                    for account in bankinform:
+                        if inputaccount == account[0]:
+                            if int(account[2]) >= inputmoney:
+                                account[2] = int(account[2]) - inputmoney
+                                myaccount = inputaccount + ".txt"
+                                with open(myaccount, 'a', encoding='UTF-8') as f:    
+                                    time = datetime.datetime.now()
+                                    f.write("{} : {} 원 출금하였습니다".format(time, inputmoney))
+                                    f.write("\n")
+                            else:
+                                print("잔액이 모자랍니다")
+                                print("첫화면으로 돌아갑니다")
                         else:
-                            print("잔액이 모자랍니다")
-                            print("첫화면으로 돌아갑니다")
-                    else:
-                        pass
+                            pass
+                else:
+                    print("없는 계좌번호 입니다")
+                    print("첫화면으로 돌아갑니다")
             else:
-                print("없는 계좌번호 입니다")
-                print("첫화면으로 돌아갑니다")
+                print("첫 화면으로 돌아갑니다")
                 
+
         # 4번 잔액조회
         def showBalance():
-            inputaccount = input("계좌를 입력해주세요: ")
-            if inputaccount in allAccount:
-                for account in bankinform:
-                    if inputaccount == account[0]:
-                        print("{} 계좌의 잔액은 {} 원입니다".format(account[0], account[2]))
-                        
-                        
-        # 6번 계좌 입출금 이력 조회
-        def accountInfo():
-            inputaccount = input("계좌 번호: ")
-            accountfile = inputaccount + '.txt'
-            if os.path.isfile(accountfile):
-                with open(accountfile, 'r', encoding='UTF-8') as f:
-                    datas = f.readlines()
-                cnt=0
-                for data in datas:
-                    cnt+=1
-                    print('[{}] {}'.format(cnt,data),end="")
+            print("* 잔액조회 하고 싶은 계좌번호를 입력해주세요\n")
+            print("* 계속 진행하길 원하면 y , 첫 화면으로 가길 원하면 n 을 입력해주세요.")
+            a = input()
+            if a=="y":
+                inputaccount = input("계좌를 입력해주세요: ")
+                if inputaccount in allAccount:
+                    for account in bankinform:
+                        if inputaccount == account[0]:
+                            print("{} 계좌의 잔액은 {} 원입니다".format(account[0], account[2]))
             else:
-                print("이력이 없습니다")
+                print("첫 화면으로 돌아갑니다")
+
+
+                        
+        # 5번 계좌 입출금 이력 조회
+        def accountInfo():
+            print("* 입출금 이력을 조회할 계좌번호를 입력해주세요\n")
+            print("* 계속 진행하길 원하면 y , 첫 화면으로 가길 원하면 n 을 입력해주세요.")
+            a = input()
+            if a=="y":
+                inputaccount = input("계좌 번호: ")
+                accountfile = inputaccount + '.txt'
+                if os.path.isfile(accountfile):
+                    with open(accountfile, 'r', encoding='UTF-8') as f:
+                        datas = f.readlines()
+                        cnt=0
+                        for data in datas:
+                            cnt+=1
+                            print('[{}] {}'.format(cnt,data),end="")
+                else:
+                    print("이력이 없습니다")
+            else:
+                print("첫 화면으로 돌아갑니다")
+
+        # 환율 .. 어떻게 하징
+        def exchangeCurrent( ):
+            print("* 환율을 조회할 수 있는 메뉴입니다. \n")
+            print("* 계속 진행하길 원하면 y , 첫 화면으로 가길 원하면 n 을 입력해주세요.")
+            a = input()
+
+            if a=="y":
+                print("um..")
+            else:
+                print("첫 화면으로 돌아갑니다")
 
 
     class BankSystem:
@@ -158,32 +176,39 @@ try:
                 print(" [2] 입금 처리")
                 print(" [3] 출금 처리")
                 print(" [4] 잔액 조회")
-                print(" [5] 환율 조회")
-                print(" [6] 입출금 기록")
+                print(" [5] 입출금 이력 조회")
+                print(" [6] 환율 조회")
                 print(" [7] 프로그램 종료")
                 print("\n======================================")
             
-                
-                work = input("원하시는 번호를 입력하세요! : ")
-                if work == "1":
-                    BankManager.accountCreate()
-                elif work == "2":
-                    BankManager.addBalance()
-                elif work == "3":
-                    BankManager.withdrawBalance()
-                elif work == "4":
-                    BankManager.showBalance()
-                # elif work == "5":
-                #     return_value(baseaddress, info)
-                elif work == "6":
-                    BankManager.accountInfo()
-                elif work == "7":
-                    with open('bankaccountlist.txt', 'w') as f:
-                        for data in bankinform:
-                            save = str(data[0]) + ":" + str(data[1]) + ":" + str(data[2]) + "\n"
-                            f.write(save)
-                    print("종료합니다")
-                    sys.exit()
+                try:
+                    work = input("원하시는 번호를 입력하세요! : ")
+                    work1= int(work)
+                    if work1 >= 8:
+                        raise Exception
+                except Exception:
+                    print("\n* 잘못 입력하셨습니다 !!!! 번호를 다시 확인해주세요")
+                    time.sleep(2)
+                else:
+                    if work == "1":
+                        BankManager.accountCreate()
+                    elif work == "2":
+                        BankManager.addBalance()
+                    elif work == "3":
+                        BankManager.withdrawBalance()
+                    elif work == "4":
+                        BankManager.showBalance()
+                    elif work == "5":
+                        BankManager.accountInfo()
+                    # elif work == "5":
+                        
+                    elif work == "7":
+                        with open('bankaccountlist.txt', 'w') as f:
+                            for data in bankinform:
+                                save = str(data[0]) + ":" + str(data[1]) + ":" + str(data[2]) + "\n"
+                                f.write(save)
+                        print("종료합니다")
+                        sys.exit()
                 
 
 
