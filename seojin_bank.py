@@ -20,11 +20,12 @@ try:
         database="Bank"
     )
 
-    ###
+   
     cursor = connection.cursor()
 
 
     class AccountCreate:
+
         def __init__(self, userAccount, userName, userBalance=0):
             self.userAccount = userAccount
             self.userName = userName
@@ -54,7 +55,7 @@ try:
                 return True
             
         # 1번 계좌 개설
-        def Create(): # 헷갈려서 이름 변경 
+        def create(): # 헷갈려서 이름 변경 
             # 추천 계좌 생성 
             first = '%02d'%random.randint(0,99)
             now = datetime.datetime.now()
@@ -84,7 +85,7 @@ try:
             
         
         # 2번 입금 
-        def addBalance():
+        def deposit():
             print("* 입금처리를 진행할 계좌번호를 입력해주세요\n")
             print("* 계속 진행하길 원하면 y , 첫 화면으로 가길 원하면 n 을 입력해주세요.")
             a = input()
@@ -118,7 +119,7 @@ try:
 
 
         # 3번 출금
-        def withdrawBalance():
+        def withdraw():
             print("* 출금처리를 진행할 계좌번호를 입력해주세요\n")
             print("* 계속 진행하길 원하면 y , 첫 화면으로 가길 원하면 n 을 입력해주세요.")
             a = input()
@@ -283,7 +284,7 @@ try:
                                 save = str(data[0]) + ":" + str(data[1]) + ":" + str(data[2]) + "\n"
                                 f.write(save)
                         
-                        conn = pymysql.connect(host="localhost", port=3306, db="bladb", passwd="blapw", user="blauser")
+                        conn = pymysql.connect(host="localhost", port=4567, db="Bank", passwd="1017", user="bank_user")
                         cur = conn.cursor()
                         result = pd.read_sql_query('select * from history',conn)
                         print(result)
@@ -293,7 +294,7 @@ try:
                         sys.exit()
                 
         def pyHistoryD(x):
-            conn = pymysql.connect(host="localhost", port=3306, db="bladb", passwd="blapw", user="blauser")
+            conn = pymysql.connect(host="localhost", port=4567, db="Bank", passwd="1017", user="bank_user")
             cur = conn.cursor()
                 
             sql =''' 
@@ -309,7 +310,7 @@ try:
         
         
         def pyHistoryW(x):
-            conn = pymysql.connect(host="localhost", port=3306, db="bladb", passwd="blapw", user="blauser")
+            conn = pymysql.connect(host="localhost", port=4567, db="Bank", passwd="1017", user="bank_user")
             cur = conn.cursor()
                 
             sql =''' 
